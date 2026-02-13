@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Валентинка 💘</title>
+  <style>
+    :root { --pink:#e6a6b8; --bg:#fff5f7; }
+    body{
+      margin:0; min-height:100vh;
+      display:grid; place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#f7f2f6;
+    }
+    .card{
+      width:min(520px, 94vw);
+      background:#fff;
+      border:6px solid var(--pink);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 12px 30px rgba(0,0,0,.08);
+    }
+    h1{ margin:0 0 10px; font-size:24px; }
+    #msg{ margin:0 0 12px; color:#444; min-height:24px; }
+
+    /* Арена под пальцы */
+    #arena{
+      position:relative;
+      height:170px;
+      border-radius:16px;
+      background:var(--bg);
+      border:2px dashed var(--pink);
+      overflow:hidden;
+      touch-action: manipulation;
+    }
+
+    button{
+      border:0;
+      padding:14px 20px;
+      font-size:18px;
+      border-radius:12px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #yes{
+      position:absolute;
+      left:16px;
+      top:58px;
+      background:#38c172;
+      color:white;
+    }
+
+    #no{
+      position:absolute;
+      left:220px;
+      top:58px;
+      background:#ff4d4d;
+      color:white;
+
+      opacity: 1;
+      transition: left .12s linear, top .12s linear, opacity .25s ease;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Ты любишь меня? 🙂💔</h1>
+  <p id="msg"></p>
+
+  <div id="arena">
+    <button id="yes">ДА</button>
+    <button id="no">НЕТ</button>
+  </div>
+</div>
+
+<script>
+  const arena = document.getElementById('arena');
+  const noBtn = document.getElementById('no');
+  const yesBtn = document.getElementById('yes');
+  const msg = document.getElementById('msg');
+
+  let tries = 0;
+  let finished = false;
+
+  function rectRelativeToArena(el){
+    const a = arena.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { x:r.left-a.left, y:r.top-a.top, w:r.width, h:r.height };
+  }
+
+  function overlaps(r1, r2){
+    return !(r1.x+r1.w < r2.x || r2.x+r2.w < r1.x || r1.y+r1.h < r2.y || r2.y+r2.h < r1.y);
+  }
+
+  function moveNo(){
+    if (finished) return;
+
+    const a = arena.getBoundingClientRect();
+    const b = noBtn.getBoundingClientRect();
+    const pad = 10;
+
+    const maxX = a.width  - b.width  - pad*2;
+    const maxY = a.height - b.height - pad*2;
+
+    const yesR = rectRelativeToArena(yesBtn);
+
+    // пытаемся несколько раз найти позицию, которая НЕ перекрывает "ДА"
+    for (let i=0; i<20; i++){
+      const x = pad + Math.random() * Math.max(0, maxX);
+      const y = pad + Math.random() * Math.max(0, maxY);
+
+      const noR = { x, y, w: b.width, h: b.height };
+      if (!overlaps(noR, yesR)){
+        noBtn.style.left = `${x}px`;
+        noBtn.style.top  = `${y}px`;
+        break;
+      }
+    }
+
+    tries++;
+    if (tries === 2) msg.textContent = "Ой 🙂";
+    if (tries === 5) msg.textContent = "Не туда жмёшь 😅";
+    if (tries === 10) msg.textContent = "Кажется, ответ очевиден ❤️";
+  }
+
+  // Главное для телефона: убегает НА ПОПЫТКЕ НАЖАТИЯ
+  function dodge(e){
+    if (finished) return;
+    e.preventDefault();
+    e.stopPropagation();
+    moveNo();
+    if (navigator.vibrate) navigator.vibrate(20);
+  }
+
+  noBtn.addEventListener('pointerdown', dodge, { passive:false });
+  noBtn.addEventListener('touchstart',  dodge, { passive:false });
+
+  // На всякий случай блокируем click по "НЕТ"
+  noBtn.addEventListener('click', (e) => {
+    if (!finished) e.preventDefault();
+  });
+
+  yesBtn.addEventListener('click', () => {
+    finished = true;
+
+    msg.textContent = "Я тебя очень сильно люблю мой лисёнок! ❤️🙂";
+    yesBtn.textContent = "ДА!!!";
+
+    // прячем "НЕТ" (красиво — с исчезновением)
+    noBtn.style.pointerEvents = "none";
+    noBtn.style.opacity = "0";
+    setTimeout(() => { noBtn.style.display = "none"; }, 260);
+
+    // (по желанию) ставим "ДА" по центру
+    yesBtn.style.left = "50%";
+    yesBtn.style.transform = "translateX(-50%)";
+  });
+
+  // стартовая позиция чуть случайная
+  moveNo(); tries = 0;
+</script>
+</body>
+</html>
